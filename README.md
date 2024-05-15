@@ -37,14 +37,14 @@ cd RoseTTAFold-All-Atom
 3. Create Conda environment
 ```
 conda create -n rf2aa python=3.10
-conda install -y -c conda-forge -c bioconda -c biocore absl-py  openbabel pandas  pytorch=2.0.1 requests scikit-learn=1.4.1.post1 scipy  tensorflow=2.11.0 omegaconf gitpython hydra-core numpy h5py hdf5 icecream click 
+conda install -y -c conda-forge -c bioconda -c biocore absl-py  openbabel pandas  pytorch=2.0.1 requests scikit-learn=1.4.1.post1 scipy  tensorflow=2.11.0 omegaconf gitpython hydra-core numpy h5py hdf5 icecream click deepdiff # for MacOS on M1 chips, hhsuite/signalp6/psipred are not available.
 
 conda activate rf2aa  # NOTE: one still needs to use `conda` to (de)activate environments
 
 pip install git+https://github.com/YaoYinYing/SE3Transformer@rf2aa
 pip install git+https://github.com/NVIDIA/dllogger#egg=dllogger
 
-pip install git+https://github.com/YaoYinYing/nvtx-mock --force-reinstall
+pip install git+https://github.com/YaoYinYing/nvtx-mock --force-reinstall # It does not really matter where this succeeds or fails. Check NVTX headers by `ls $(dirname $(which python))/../include |grep nvtx`. 
 pip install nvtx
 
 
