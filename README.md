@@ -8,15 +8,17 @@ RoseTTAFold All-Atom is a biomolecular structure prediction neural network that 
 RFAA is not accurate for all cases, but produces useful error estimates to allow users to identify accurate predictions. Below are the instructions for setting up and using the model. 
 
 ## Table of Contents
-- [Setup/Installation](#set-up)
-- [Inference Configs Using Hydra](#inference-config)
-- [Predicting protein structures](#protein-pred)
-- [Predicting protein/nucleic acid complexes](#p-na-complex)
-- [Predicting protein/small molecule complexes](#p-sm-complex)
-- [Predicting higher order complexes](#higher-order)
-- [Predicting covalently modified proteins](#covale)
-- [Understanding model outputs](#outputs)
-- [Conclusion](#conclusion)
+- [Code for RoseTTAFold All-Atom](#code-for-rosettafold-all-atom)
+- [Table of Contents](#table-of-contents)
+  - [Setup/Installation](#setupinstallation)
+  - [Inference Configs Using Hydra](#inference-configs-using-hydra)
+  - [Predicting Protein Monomers](#predicting-protein-monomers)
+  - [Predicting Protein Nucleic Acid Complexes](#predicting-protein-nucleic-acid-complexes)
+  - [Predicting Protein Small Molecule Complexes](#predicting-protein-small-molecule-complexes)
+  - [Predicting Higher Order Complexes](#predicting-higher-order-complexes)
+  - [Predicting Covalently Modified Proteins](#predicting-covalently-modified-proteins)
+  - [Understanding model outputs](#understanding-model-outputs)
+  - [Conclusion](#conclusion)
 
 <a id="set-up"></a>
 ### Setup/Installation
@@ -37,10 +39,12 @@ cd RoseTTAFold-All-Atom
 mamba env create -f environment.yaml
 conda activate RFAA  # NOTE: one still needs to use `conda` to (de)activate environments
 
-cd rf2aa/SE3Transformer/
-pip3 install --no-cache-dir -r requirements.txt
-python3 setup.py install
-cd ../../
+pip install git+https://github.com/YaoYinYing/SE3Transformer@rf2aa
+pip install git+https://github.com/NVIDIA/dllogger#egg=dllogger
+
+pip install git+https://github.com/YaoYinYing/nvtx-mock --force-reinstall
+pip install nvtx
+
 
 ```
 Change the default checkpoint_path/database paths in `RoseTTAFold-All-Atom/rf2aa/config/inference/base.yaml` 
