@@ -34,10 +34,12 @@ source ~/.bashrc  # alternatively, one can restart their shell session to achiev
 git clone https://github.com/baker-laboratory/RoseTTAFold-All-Atom
 cd RoseTTAFold-All-Atom
 ```
-3. Create Mamba environment
+3. Create Conda environment
 ```
-mamba env create -f environment.yaml
-conda activate RFAA  # NOTE: one still needs to use `conda` to (de)activate environments
+conda create -n rf2aa python=3.10
+conda install -y -c conda-forge -c bioconda -c biocore absl-py  openbabel pandas  pytorch=2.0.1 requests scikit-learn=1.4.1.post1 scipy  tensorflow=2.11.0 omegaconf gitpython hydra-core numpy h5py hdf5 icecream click 
+
+conda activate rf2aa  # NOTE: one still needs to use `conda` to (de)activate environments
 
 pip install git+https://github.com/YaoYinYing/SE3Transformer@rf2aa
 pip install git+https://github.com/NVIDIA/dllogger#egg=dllogger
