@@ -3,11 +3,11 @@ set -e
 
 export HYDRA_FULL_ERROR=1
 
-# echo testing 7u7w_protein
-# rf2aa_inference --config-name=base \
-#     job_name=7u7w_protein \
-#     +protein_inputs.A.fasta_file=examples/protein/7u7w_A.fasta \
-#     output_path=examples/output/7u7w_protein/
+echo testing 7u7w_protein
+rf2aa_inference --config-name=base \
+    job_name=7u7w_protein \
+    +protein_inputs.A.fasta_file=examples/protein/7u7w_A.fasta \
+    output_path=examples/output/7u7w_protein/
 
 
 
@@ -53,4 +53,23 @@ rf2aa_inference --config-name=base \
     +sm_inputs.B.input_type=sdf \
     '+covale_inputs="A,74,ND2:B,1:CW,null"' \
     output_path=examples/output/covalently_modified_7s69_A/
+
+echo testing p450_heme
+rf2aa_inference --config-name=base \
+    job_name=p450_heme \
+    +protein_inputs.A.fasta_file=examples/protein/p450.fasta \
+    +sm_inputs.B.input=examples/small_molecule/heme.sdf \
+    +sm_inputs.B.input_type=sdf \
+    output_path=examples/output/p450_heme/
+
+
+
+echo testing covalently_modified_p450
+rf2aa_inference --config-name=base \
+    job_name=covalently_modified_p450 \
+    +protein_inputs.A.fasta_file=examples/protein/p450.fasta \
+    +sm_inputs.B.input=examples/small_molecule/heme.sdf \
+    +sm_inputs.B.input_type=sdf \
+    '+covale_inputs="A,423,SG:B,1:null,null"' \
+    output_path=examples/output/covalently_modified_p450/
 

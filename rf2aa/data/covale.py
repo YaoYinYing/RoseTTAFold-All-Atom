@@ -331,16 +331,15 @@ chirality_options = {
     "CCW": openbabel.OBStereo.AntiClockwise,
 }
 
-def recompute_xyz_after_chirality(obmol):
-    builder = openbabel.OBBuilder()
-    builder.Build(obmol)
-    ff = openbabel.OBForceField.FindForceField("mmff94")
-    did_setup = ff.Setup(obmol)
-    if did_setup:
-        ff.FastRotorSearch()
-        ff.GetCoordinates(obmol)
-    else:
-        raise ValueError(f"Failed to generate 3D coordinates for molecule {obmol}.")
+
+def recompute_xyz_after_chirality(obmol: openbabel.OBMol):
+    from rf2aa.data.parsers import setup_forcefield
+    try:
+        obmol=setup_forcefield(obmol)
+    except ValueError:
+        print('Failed to setup forcefield using mmff94, retry with gaff ...')
+        obmol=setup_forcefield(obmol,forcefield='gaff')
+    
     atom_coords = torch.tensor([[obmol.GetAtom(i).x(),obmol.GetAtom(i).y(), obmol.GetAtom(i).z()] 
                                 for i in range(1, obmol.NumAtoms()+1)]).unsqueeze(0) # (1, natoms, 3)
     return atom_coords
