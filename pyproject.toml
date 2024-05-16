@@ -20,3 +20,7 @@ packages = [
     { include = "rf2aa" },
     { include = "rf2aa/*.py" },
 ]
+
+
+[tool.poetry.scripts]
+rf2aa_inference = 'rf2aa.run_inference:main'
