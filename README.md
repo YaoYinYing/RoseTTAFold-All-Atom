@@ -58,6 +58,8 @@ pip install git+https://github.com/YaoYinYing/nvtx-mock --force-reinstall
 # the real nvtx
 pip install nvtx
 
+pip install assertpy pydantic
+
 
 ```
 Change the default checkpoint_path/database paths in `RoseTTAFold-All-Atom/rf2aa/config/inference/base.yaml` 
