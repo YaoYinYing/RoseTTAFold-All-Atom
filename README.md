@@ -39,14 +39,23 @@ cd RoseTTAFold-All-Atom
 conda create -n rf2aa python=3.10
 conda activate rf2aa  # NOTE: one still needs to use `conda` to (de)activate environments
 
-conda install -y -c conda-forge -c bioconda -c biocore absl-py  openbabel pandas  pytorch=2.0.1 requests scikit-learn=1.4.1.post1 scipy  tensorflow=2.11.0 omegaconf gitpython hydra-core numpy h5py hdf5 icecream click deepdiff # for MacOS on M1 chips, hhsuite/signalp6/psipred are not available.
+# Dependencies
+# for MacOS on M1 chips, hhsuite/signalp6/psipred are not available.
+conda install -y -c conda-forge -c bioconda -c biocore absl-py  openbabel pandas  pytorch=2.0.1 requests scikit-learn=1.4.1.post1 scipy  tensorflow=2.11.0 omegaconf gitpython hydra-core numpy h5py hdf5 icecream click deepdiff 
+
+# for Linux with hhsuite/signalp6/psipred
+conda install -y -c conda-forge -c bioconda -c predector  -c biocore hhsuite signalp6 psipred
 
 pip install dgl -f https://data.dgl.ai/wheels/repo.html
 
 pip install git+https://github.com/YaoYinYing/SE3Transformer@rf2aa
 pip install git+https://github.com/NVIDIA/dllogger#egg=dllogger
 
-pip install git+https://github.com/YaoYinYing/nvtx-mock --force-reinstall # It does not really matter where this succeeds or fails. Check NVTX headers by `ls $(dirname $(which python))/../include |grep nvtx`. 
+# mock nvtx c headers
+# It does not really matter where this succeeds or fails. Check NVTX headers by `ls $(dirname $(which python))/../include |grep nvtx`. 
+pip install git+https://github.com/YaoYinYing/nvtx-mock --force-reinstall 
+
+# the real nvtx
 pip install nvtx
 
 
@@ -58,6 +67,7 @@ pip install . --no-dependencies   --no-cache-dir
 ```
 4. Configure signalp6 after downloading a licensed copy of it from https://services.healthtech.dtu.dk/services/SignalP-6.0/
 ```
+pip install mkl
 # NOTE: (current) version 6.0h is used in this example, which was downloaded to the current working directory using `wget`
 signalp6-register signalp-6.0h.fast.tar.gz
 
@@ -66,6 +76,7 @@ mv $CONDA_PREFIX/lib/python3.10/site-packages/signalp/model_weights/distilled_mo
 ```
 5. Install input preparation dependencies
 ```
+# csblast-2.2.3 and blast-2.2.26
 bash install_dependencies.sh
 ```
 6. Download the model weights.
@@ -88,15 +99,7 @@ tar xfz bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt.tar.gz -C ./bfd
 wget https://files.ipd.uw.edu/pub/RoseTTAFold/pdb100_2021Mar03.tar.gz
 tar xfz pdb100_2021Mar03.tar.gz
 ```
-8. Download BLAST
-```
-wget https://ftp.ncbi.nlm.nih.gov/blast/executables/legacy.NOTSUPPORTED/2.2.26/blast-2.2.26-x64-linux.tar.gz
-mkdir -p blast-2.2.26
-tar -xf blast-2.2.26-x64-linux.tar.gz -C blast-2.2.26
-cp -r blast-2.2.26/blast-2.2.26/ blast-2.2.26_bk
-rm -r blast-2.2.26
-mv blast-2.2.26_bk/ blast-2.2.26
-```
+
 <a id="inference-config"></a>
 ### Inference Configs Using Hydra
 
