@@ -35,16 +35,14 @@ git clone https://github.com/YaoYinYing/RoseTTAFold-All-Atom
 cd RoseTTAFold-All-Atom
 ```
 3. Create Conda environment
-```
-conda create -n rf2aa python=3.10
+- MacOS
+```shell
+conda create -n rf2aa python=3.10 -y
 conda activate rf2aa  # NOTE: one still needs to use `conda` to (de)activate environments
 
 # Dependencies
 # for MacOS on M1 chips, hhsuite/signalp6/psipred are not available.
 conda install -y -c conda-forge -c bioconda -c biocore absl-py  openbabel pandas  pytorch=2.0.1 requests scikit-learn=1.4.1.post1 scipy  tensorflow=2.11.0 omegaconf gitpython hydra-core numpy h5py hdf5 icecream click deepdiff 
-
-# for Linux with hhsuite/signalp6/psipred
-conda install -y -c conda-forge -c bioconda -c predector  -c biocore hhsuite signalp6 psipred
 
 pip install dgl -f https://data.dgl.ai/wheels/repo.html
 
@@ -59,8 +57,24 @@ pip install git+https://github.com/YaoYinYing/nvtx-mock --force-reinstall
 pip install nvtx
 
 pip install assertpy pydantic
+```
+- Ubuntu
+```shell
+conda create -n rf2aa python=3.10 -y
+conda activate rf2aa  # NOTE: one still needs to use `conda` to (de)activate environments
 
+# Dependencies
+# for MacOS on M1 chips, hhsuite/signalp6/psipred are not available.
+conda install -y -c conda-forge -c bioconda -c biocore absl-py  openbabel pandas pytorch=2.0.1 requests scikit-learn=1.4.1.post1 scipy  tensorflow=2.11.0 omegaconf gitpython hydra-core numpy h5py hdf5 icecream click deepdiff
 
+pip install dgl -f https://data.dgl.ai/wheels/repo.html
+
+# Tools of sequence preprocessing
+conda install -y -c conda-forge -c bioconda -c predector  -c biocore hhsuite signalp6 psipred
+
+pip install git+https://github.com/YaoYinYing/SE3Transformer@rf2aa
+
+pip install assertpy pydantic
 ```
 Change the default checkpoint_path/database paths in `RoseTTAFold-All-Atom/rf2aa/config/inference/base.yaml` 
 then install `rf2aa` as a python module that can be called everywhere.
@@ -69,7 +83,6 @@ pip install . --no-dependencies   --no-cache-dir
 ```
 4. Configure signalp6 after downloading a licensed copy of it from https://services.healthtech.dtu.dk/services/SignalP-6.0/
 ```
-pip install mkl
 # NOTE: (current) version 6.0h is used in this example, which was downloaded to the current working directory using `wget`
 signalp6-register signalp-6.0h.fast.tar.gz
 
