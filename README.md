@@ -31,7 +31,7 @@ source ~/.bashrc  # alternatively, one can restart their shell session to achiev
 ```
 2. Clone the package
 ```
-git clone https://github.com/baker-laboratory/RoseTTAFold-All-Atom
+git clone https://github.com/YaoYinYing/RoseTTAFold-All-Atom
 cd RoseTTAFold-All-Atom
 ```
 3. Create Conda environment
