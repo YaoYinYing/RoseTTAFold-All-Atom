@@ -12,13 +12,16 @@ from rf2aa.util_module import init_lecun_normal_param, \
     make_full_graph, rbf, init_lecun_normal
 from rf2aa.loss.loss import calc_chiral_grads
 from rf2aa.model.layers.Attention_module import FeedForwardLayer
-from rf2aa.SE3Transformer.se3_transformer.model import SE3Transformer
-from rf2aa.SE3Transformer.se3_transformer.model.fiber import Fiber
+from se3_transformer.model import SE3Transformer
+from se3_transformer.model.fiber import Fiber
 from rf2aa.util_module import get_seqsep_protein_sm
 
 se3_transformer_path = inspect.getfile(SE3Transformer)
 se3_fiber_path = inspect.getfile(Fiber)
-assert 'rf2aa' in se3_transformer_path
+# this is a hack to make sure the SE3Transformer is in the original rf2aa package. 
+# Since we have drop it out, we need to turn this assertion off.
+# instead, we ganna use `https://github.com/YaoYinYing/SE3Transformer@rf2aa`
+# assert 'rf2aa' in se3_transformer_path
 
 class SE3TransformerWrapper(nn.Module):
     """SE(3) equivariant GCN with attention"""

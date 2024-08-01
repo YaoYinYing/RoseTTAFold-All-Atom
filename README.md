@@ -8,15 +8,17 @@ RoseTTAFold All-Atom is a biomolecular structure prediction neural network that 
 RFAA is not accurate for all cases, but produces useful error estimates to allow users to identify accurate predictions. Below are the instructions for setting up and using the model. 
 
 ## Table of Contents
-- [Setup/Installation](#set-up)
-- [Inference Configs Using Hydra](#inference-config)
-- [Predicting protein structures](#protein-pred)
-- [Predicting protein/nucleic acid complexes](#p-na-complex)
-- [Predicting protein/small molecule complexes](#p-sm-complex)
-- [Predicting higher order complexes](#higher-order)
-- [Predicting covalently modified proteins](#covale)
-- [Understanding model outputs](#outputs)
-- [Conclusion](#conclusion)
+- [Code for RoseTTAFold All-Atom](#code-for-rosettafold-all-atom)
+- [Table of Contents](#table-of-contents)
+  - [Setup/Installation](#setupinstallation)
+  - [Inference Configs Using Hydra](#inference-configs-using-hydra)
+  - [Predicting Protein Monomers](#predicting-protein-monomers)
+  - [Predicting Protein Nucleic Acid Complexes](#predicting-protein-nucleic-acid-complexes)
+  - [Predicting Protein Small Molecule Complexes](#predicting-protein-small-molecule-complexes)
+  - [Predicting Higher Order Complexes](#predicting-higher-order-complexes)
+  - [Predicting Covalently Modified Proteins](#predicting-covalently-modified-proteins)
+  - [Understanding model outputs](#understanding-model-outputs)
+  - [Conclusion](#conclusion)
 
 <a id="set-up"></a>
 ### Setup/Installation
@@ -29,18 +31,56 @@ source ~/.bashrc  # alternatively, one can restart their shell session to achiev
 ```
 2. Clone the package
 ```
-git clone https://github.com/baker-laboratory/RoseTTAFold-All-Atom
+git clone https://github.com/YaoYinYing/RoseTTAFold-All-Atom
 cd RoseTTAFold-All-Atom
 ```
-3. Create Mamba environment
-```
-mamba env create -f environment.yaml
-conda activate RFAA  # NOTE: one still needs to use `conda` to (de)activate environments
+3. Create Conda environment
+- MacOS
+```shell
+conda create -n rf2aa python=3.10 -y
+conda activate rf2aa  # NOTE: one still needs to use `conda` to (de)activate environments
 
-cd rf2aa/SE3Transformer/
-pip3 install --no-cache-dir -r requirements.txt
-python3 setup.py install
-cd ../../
+# Dependencies
+# for MacOS on M1 chips, hhsuite/signalp6/psipred are not available.
+conda install -y -c conda-forge -c bioconda -c biocore absl-py  openbabel pandas  pytorch=2.0.1 requests scikit-learn=1.4.1.post1 scipy  tensorflow=2.11.0 omegaconf gitpython hydra-core numpy h5py hdf5 icecream click deepdiff 
+
+pip install dgl -f https://data.dgl.ai/wheels/repo.html
+
+pip install git+https://github.com/YaoYinYing/SE3Transformer@rf2aa
+pip install git+https://github.com/NVIDIA/dllogger#egg=dllogger
+
+# mock nvtx c headers
+# It does not really matter where this succeeds or fails. Check NVTX headers by `ls $(dirname $(which python))/../include |grep nvtx`. 
+pip install git+https://github.com/YaoYinYing/nvtx-mock --force-reinstall 
+
+# the real nvtx
+pip install nvtx
+
+pip install assertpy pydantic
+```
+- Ubuntu
+```shell
+conda create -n rf2aa python=3.10 -y
+source activate rf2aa  # NOTE: one still needs to use `conda` to (de)activate environments
+
+# Dependencies
+# for MacOS on M1 chips, hhsuite/signalp6/psipred are not available.
+conda install pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 pytorch-cuda=11.8 -c pytorch -c nvidia
+conda install -y -c conda-forge -c bioconda -c biocore absl-py  openbabel pandas requests scikit-learn=1.4.1.post1 scipy  tensorflow=2.11.0 omegaconf gitpython hydra-core numpy h5py hdf5 icecream click deepdiff
+
+pip install dgl -f https://data.dgl.ai/wheels/cu118/repo.html
+
+# Tools of sequence preprocessing
+conda install -y -c conda-forge -c bioconda -c predector  -c biocore hhsuite signalp6 psipred
+
+pip install git+https://github.com/YaoYinYing/SE3Transformer@rf2aa
+
+pip install assertpy pydantic mkl
+```
+Change the default checkpoint_path/database paths in `RoseTTAFold-All-Atom/rf2aa/config/inference/base.yaml` 
+then install `rf2aa` as a python module that can be called everywhere.
+```shell
+pip install . --no-dependencies   --no-cache-dir
 ```
 4. Configure signalp6 after downloading a licensed copy of it from https://services.healthtech.dtu.dk/services/SignalP-6.0/
 ```
@@ -52,6 +92,7 @@ mv $CONDA_PREFIX/lib/python3.10/site-packages/signalp/model_weights/distilled_mo
 ```
 5. Install input preparation dependencies
 ```
+# csblast-2.2.3 and blast-2.2.26
 bash install_dependencies.sh
 ```
 6. Download the model weights.
@@ -74,15 +115,7 @@ tar xfz bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt.tar.gz -C ./bfd
 wget https://files.ipd.uw.edu/pub/RoseTTAFold/pdb100_2021Mar03.tar.gz
 tar xfz pdb100_2021Mar03.tar.gz
 ```
-8. Download BLAST [39M]
-```
-wget https://ftp.ncbi.nlm.nih.gov/blast/executables/legacy.NOTSUPPORTED/2.2.26/blast-2.2.26-x64-linux.tar.gz
-mkdir -p blast-2.2.26
-tar -xf blast-2.2.26-x64-linux.tar.gz -C blast-2.2.26
-cp -r blast-2.2.26/blast-2.2.26/ blast-2.2.26_bk
-rm -r blast-2.2.26
-mv blast-2.2.26_bk/ blast-2.2.26
-```
+
 <a id="inference-config"></a>
 ### Inference Configs Using Hydra
 
@@ -212,15 +245,19 @@ Specifying covalent modifications is slightly more complicated for the following
 - Forming new covalent bonds can create or remove chiral centers. Since RFAA specifies chirality at input, the network needs to be provided with chirality information. Under the hood, chiral centers are identified by a package called Openbabel which does not always agree with chemical intuition. 
 - Covalent modifications often have "leaving groups", or chemical groups that leave both the protein and the modification upon modification. 
 
-The way you input covalent bonds to RFAA is as a list of bonds between an atom on the protein and an atom on one of the input small molecules. This is the syntax for those bonds:
+The way you input covalent bonds to RFAA is as a comma-separared string of bonds between an atom on the protein and an atom on one of the input small molecules. This is the syntax for those bonds:
+```text
+'protein_chain,residue_number,atom_name:small_molecule_chain,atom_index:new_chirality_atom_1,new_chirality_atom_2'
 ```
-(protein_chain, residue_number, atom_name), (small_molecule_chain, atom_index), (new_chirality_atom_1, new_chirality_atom_2)
+for example:
+```text
+'A,74,ND2:B,1:CW,null'
 ```
 **Both the protein residue number and the atom_index are 1 indexed** (as you would normally count, as opposed to 0 indexed like many programming languages).
 
 In most cases, the chirality of the atoms will not change. This is what an input for a case where the chirality does not change looks like:
 ```
-(protein_chain, residue_number, atom_name), (small_molecule_chain, atom_index), ("null", "null")
+'A,74,ND2:B,1:null,null'
 ```
 The options for chirality are `CCW` and `CW` for counterclockwise and clockwise. The code will raise an Exception is there is a chiral center that Openbabel found that the user did not specify. Even if you believe Openbabel is wrong, the network likely received chirality information for those cases during training, so we expect that you will get the best results by specifying chirality at those positions.
 
@@ -245,23 +282,46 @@ sm_inputs:
     input: examples/small_molecule/7s69_glycan.sdf
     input_type: sdf
 
-covale_inputs: "[((\"A\", \"74\", \"ND2\"), (\"B\", \"1\"), (\"CW\", \"null\"))]"
+covale_inputs: "A,74,ND2:B,1:CW,null"
 
 loader_params:
   MAXCYCLE: 10
 ```
-**For covalently modified proteins, you must provide the input molecule as a sdf file**, since openbabel does not read smiles strings in a specific order. The syntax shown is identical to loading a protein and small molecule and then indicating a bond between them. In this case, hydra creates some problems because we have to escape the quotation marks using backslashes.
+**For covalently modified proteins, you must provide the input molecule as a sdf file**, since openbabel does not read smiles strings in a specific order. If you give RF2AA a covale_inputs string from command line, you must tell hydra that this is a string not a list (see: https://hydra.cc/docs/tutorials/structured_config/intro/) :
+```shell
+rf2aa_inference --config-name=base \
+    job_name=covalently_modified_7s69_A \
+    +protein_inputs.A.fasta_file=examples/protein/7s69_A.fasta \
+    +sm_inputs.B.input=examples/small_molecule/7s69_glycan.sdf \
+    +sm_inputs.B.input_type=sdf \
+    '+covale_inputs="A,74,ND2:B,1:CW,null"' \
+    output_path=examples/output/covalently_modified_7s69_A/
+```
+
 
 To clarify, this input:
 ```
-[(("A", "74", "ND2"), ("B", "1"), ("CW", "null"))]
+"A,74,ND2:B,1:CW,null"
 ```
-becomes this so it can be parsed correctly:
+will be parsed correctly as a tuple of `CovalentBond` instance representing covalent bond input:
+```python
+covalent_bonds: Tuple[CovalentBond] = (
+  CovalentBond(
+    protein_chain='A',
+    protein_residue_number=74,
+    protein_atom_name='ND2',
+    small_molecule_chain='B',
+    sm_atom_index=1,
+    new_chirality_atom_1='CW',
+    new_chirality_atom_2='null'
+  ),
+)
 ```
-"[((\"A\", \"74\", \"ND2\"), (\"B\", \"1\"), (\"CW\", \"null\"))]"
+For multiple bond input, use semicolons for separating from each other (not seriously tested):
+```text
+'A,74,ND2:B,1:CW,null;A,423,SG:B,1:null,null'
 ```
 
-We know this syntax is hard to work with and we are happy to review PRs if anyone in the community can figure out how to specify all the necessary requirements in a more user friendly way!
 
 <a id="outputs"></a>
 ### Understanding model outputs

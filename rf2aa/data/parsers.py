@@ -13,6 +13,7 @@ import torch
 from openbabel import openbabel
 from rf2aa.chemical import ChemicalData as ChemData
 
+
 def get_dislf(seq, xyz, mask):
     L = seq.shape[0]
     resolved_cys_mask = ((seq==ChemData().aa2num['CYS']) * mask[:,5]).nonzero().squeeze(-1)  # cys[5]=='sg'
@@ -553,6 +554,7 @@ def parse_templates(item, params):
     # init FFindexDB of templates
     ### and extract template IDs
     ### present in the DB
+    FFindexDB = namedtuple("FFindexDB", "index, data")
     ffdb = FFindexDB(read_index(params['FFDB']+'_pdb.ffindex'),
                      read_data(params['FFDB']+'_pdb.ffdata'))
     #ffids = set([i.name for i in ffdb.index])
@@ -741,6 +743,20 @@ def clean_sdffile(filename):
 
     return molstring
 
+def setup_forcefield(obmol: openbabel.OBMol,forcefield: str='mmff94' ):
+    builder = openbabel.OBBuilder()
+    builder.Build(obmol)
+    ff:openbabel.OBForceField = openbabel.OBForceField.FindForceField(forcefield)
+    ff.SetLogToStdOut()
+    ff.SetLogLevel(0)
+    did_setup = ff.Setup(obmol)
+    if did_setup:
+        ff.FastRotorSearch()
+        ff.GetCoordinates(obmol)
+        return obmol
+    else:
+        raise ValueError(f"Failed to generate 3D coordinates for molecule {obmol} using {forcefield}.")
+
 def parse_mol(filename, filetype="mol2", string=False, remove_H=True, find_automorphs=True, generate_conformer: bool = False):
     """Parse small molecule ligand.
 
@@ -779,15 +795,13 @@ def parse_mol(filename, filetype="mol2", string=False, remove_H=True, find_autom
     else:
         obConversion.ReadFile(obmol,filename)
     if generate_conformer:
-        builder = openbabel.OBBuilder()
-        builder.Build(obmol)
-        ff = openbabel.OBForceField.FindForceField("mmff94")
-        did_setup = ff.Setup(obmol)
-        if did_setup:
-            ff.FastRotorSearch()
-            ff.GetCoordinates(obmol)
-        else:
-            raise ValueError(f"Failed to generate 3D coordinates for molecule {filename}.")
+
+        try:
+            obmol=setup_forcefield(obmol)
+        except ValueError:
+            print('Failed to setup forcefield using mmff94, retry with gaff ...')
+            obmol=setup_forcefield(obmol,forcefield='gaff')
+        
     if remove_H:
         obmol.DeleteHydrogens()
         # the above sometimes fails to get all the hydrogens
