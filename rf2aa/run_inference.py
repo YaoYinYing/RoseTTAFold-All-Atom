@@ -58,7 +58,8 @@ class ModelRunner:
                         fasta_file,
                         chain,
                         self
-                    ) 
+                    )
+                    calculated_proteins[fasta_file]=protein_input
                 else:
                     protein_input=calculated_proteins[fasta_file]
 
