@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 from dataclasses import asdict
 
+from absl import logging
+
 from rf2aa.data.merge_inputs import merge_all
 from rf2aa.data.covale import load_covalent_molecules
 from rf2aa.data.nucleic_acid import load_nucleic_acid
@@ -16,6 +18,8 @@ from rf2aa.model.RoseTTAFoldModel import RoseTTAFoldModule
 from rf2aa.training.recycling import recycle_step_legacy
 from rf2aa.util import writepdb, is_atom, Ls_from_same_chain_2d
 from rf2aa.util_module import XYZConverter
+
+from rf2aa.data.msa.tools import utils
 
 script_path=os.path.dirname(os.path.realpath(__file__))
 
@@ -90,7 +94,7 @@ class ModelRunner:
             # add to the sm_inputs list
             # add to residues to atomize
             raise NotImplementedError("Modres inference is not implemented")
-        
+
         raw_data = merge_all(protein_inputs, na_inputs, sm_inputs, residues_to_atomize, deterministic=self.deterministic)
         self.raw_data = raw_data
 
@@ -107,6 +111,7 @@ class ModelRunner:
             cb_tor = ChemData().cb_torsion_t.to(self.device),
 
         ).to(self.device)
+        logging.info(f'Transferred to {self.device}')
         checkpoint = torch.load(self.config.checkpoint_path, map_location=self.device)
         self.model.load_state_dict(checkpoint['model_state_dict'])
 
@@ -150,10 +155,15 @@ class ModelRunner:
                                           f"{self.config.job_name}_aux.pt"))
 
     def infer(self):
-        self.load_model()
-        self.parse_inference_config()
-        input_feats = self.construct_features()
-        outputs = self.run_model_forward(input_feats)
+        with utils.timing('loading model'):
+            self.load_model()
+        with utils.timing('parsing config'):
+            self.parse_inference_config()
+        with utils.timing('construct features'):
+            input_feats = self.construct_features()
+        
+        with utils.timing('inference'):
+            outputs = self.run_model_forward(input_feats)
         self.write_outputs(input_feats, outputs)
 
     def lddt_unbin(self, pred_lddt):

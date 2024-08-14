@@ -104,6 +104,9 @@ class HHBlits:
     os.makedirs(save_dir, exist_ok=True)
     
     a3m_path = os.path.join(save_dir, f'{output_prefix}.a3m')
+    if os.path.isfile(a3m_path):
+      logging.warning('Found existing a3m file %s', a3m_path)
+      return a3m_path
 
     db_cmd = []
     for db_path in self.databases:

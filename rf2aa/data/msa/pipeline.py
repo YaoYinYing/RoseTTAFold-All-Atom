@@ -60,10 +60,10 @@ class Pipeline:
                 if line.startswith(">")
             ]
         )
-        passed_flag=seq_num > cutoff
+        passed_flag = seq_num > cutoff
         logging.info(
-                f"Coverage check ({os.path.basename(a3m_path)}): {passed_flag} ({seq_num} sequences)"
-            )
+            f"Coverage check ({os.path.basename(a3m_path)}): {passed_flag} ({seq_num} sequences)"
+        )
         return passed_flag
 
     def run_signalp(self, fasta_path):
@@ -92,7 +92,7 @@ class Pipeline:
         tmp_dir = os.path.join(save_dir, db_alias)
 
         os.makedirs(tmp_dir, exist_ok=True)
-        '''
+        """
         hhblits -o /dev/null \
             -mact 0.35 \
             -maxfilt 100_000_000 \
@@ -105,7 +105,7 @@ class Pipeline:
             -maxmem $MEM \
             -n 4 -d $DB_UR30"
        
-        '''
+        """
         hhblits_runner = hhblits.HHBlits(
             binary_path=self.hhblits_binary,
             databases=[database],
@@ -123,17 +123,13 @@ class Pipeline:
 
         for e_value in e_values:
             hhblits_res_path = os.path.join(tmp_dir, f"{self.out_prefix}.{e_value}.a3m")
-            if not os.path.isfile(hhblits_res_path):
-                logging.info(
-                    f"Running HHblits against {db_alias} with E-value cutoff {e_value}"
+            hhblits_runner.e_value = e_value
+            with utils.timing(f"hhblits vs {e_value=}"):
+                hhblits_res_path = hhblits_runner.query(
+                    input_fasta_path=fasta_path,
+                    save_dir=tmp_dir,
+                    output_prefix=f"{self.out_prefix}.{db_alias}.{e_value}",
                 )
-                hhblits_runner.e_value = e_value
-                with utils.timing(f"hhblits vs {e_value=}"):
-                    hhblits_res_path = hhblits_runner.query(
-                        input_fasta_path=fasta_path,
-                        save_dir=tmp_dir,
-                        output_prefix=f"{self.out_prefix}.{db_alias}.{e_value}",
-                    )
 
             filtered_msa, passed = self.run_hhfilter(hhblits_res_path)
 
@@ -165,7 +161,7 @@ class Pipeline:
                         input_a3m_path=input_a3m_path, output_a3m_path=output_a3m_path
                     )
             passed = self.check_a3m_seq_number(output_a3m_path, max_seq)
-            
+
             if passed:
                 return output_a3m_path, True
 
@@ -179,7 +175,7 @@ class Pipeline:
                 1e-6,
                 1e-3,
             ),
-            1e-3,
+            (1e-3,),
         )
 
         for db, e_values in zip(dbs, e_value_groups):
