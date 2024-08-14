@@ -125,9 +125,6 @@ class SecondaryStructure:
             with open(os.path.join(tmp_dir,temp_sn), 'w') as snfile:
                 snfile.write(f"{temp_fasta}\n")
 
-            logging.info(tmp_dir)
-            logging.info(os.listdir(tmp_dir))
-
             # Run makemat to create a matrix file
             makemat_cmd = [self.makemat_binary, "-P", temp_id]
             logging.info('Running makemat with command: %s', ' '.join(makemat_cmd))
@@ -161,7 +158,6 @@ class SecondaryStructure:
             self._run_command(' '.join(psipass2_cmd), "psipass2", cwd=tmp_dir, stdout_redirect=os.path.join(tmp_dir,temp_horiz))
 
             psipred_res=ParsePsipredHformat(open(os.path.join(tmp_dir,temp_horiz),'r').read())
-            logging.info(psipred_res)
 
             # Extract secondary structure prediction
             self._format_output(psipred_res, output_ss_path)

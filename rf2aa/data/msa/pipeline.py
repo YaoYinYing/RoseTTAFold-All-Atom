@@ -60,7 +60,11 @@ class Pipeline:
                 if line.startswith(">")
             ]
         )
-        return seq_num > cutoff
+        passed_flag=seq_num > cutoff
+        logging.info(
+                f"Coverage check ({os.path.basename(a3m_path)}): {passed_flag} ({seq_num} sequences)"
+            )
+        return passed_flag
 
     def run_signalp(self, fasta_path):
         with utils.timing("SignalP"):
@@ -88,7 +92,20 @@ class Pipeline:
         tmp_dir = os.path.join(save_dir, db_alias)
 
         os.makedirs(tmp_dir, exist_ok=True)
-
+        '''
+        hhblits -o /dev/null \
+            -mact 0.35 \
+            -maxfilt 100_000_000 \
+            -neffmax 20 \
+            -cov 25 \
+            -cpu $CPU \
+            -nodiff \
+            -realign_max 100_000_000 \
+            -maxseq 1000000 \
+            -maxmem $MEM \
+            -n 4 -d $DB_UR30"
+       
+        '''
         hhblits_runner = hhblits.HHBlits(
             binary_path=self.hhblits_binary,
             databases=[database],
@@ -98,9 +115,9 @@ class Pipeline:
             mact=0.35,
             neffmax=20,
             cov=25,
-            maxseq=100_000_000,
+            maxseq=1_000_000,
             realign_max=100_000_000,
-            maxfilt=1_000_000,
+            maxfilt=100_000_000,
             nodiff=True,
         )
 
@@ -115,7 +132,7 @@ class Pipeline:
                     hhblits_res_path = hhblits_runner.query(
                         input_fasta_path=fasta_path,
                         save_dir=tmp_dir,
-                        output_prefix=f"{self.out_prefix}.{e_value}",
+                        output_prefix=f"{self.out_prefix}.{db_alias}.{e_value}",
                     )
 
             filtered_msa, passed = self.run_hhfilter(hhblits_res_path)
@@ -148,9 +165,7 @@ class Pipeline:
                         input_a3m_path=input_a3m_path, output_a3m_path=output_a3m_path
                     )
             passed = self.check_a3m_seq_number(output_a3m_path, max_seq)
-            logging.info(
-                f"Coverage check ({os.path.basename(output_a3m_path)}): {passed}"
-            )
+            
             if passed:
                 return output_a3m_path, True
 
