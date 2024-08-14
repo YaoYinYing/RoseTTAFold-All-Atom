@@ -9,7 +9,7 @@ database_params:
   mem: 256
 
 binaries:
-  hhblits: /mnt/data/envs/conda_env/envs/alphafold_2.3/bin/hhblits
+  hhblits: 
   hhfilter:
   hhsearch:
   signalp:
