@@ -3,6 +3,7 @@ import hydra
 import torch
 import torch.nn as nn
 from dataclasses import asdict
+from omegaconf import DictConfig
 
 from absl import logging
 
@@ -25,13 +26,13 @@ script_path=os.path.dirname(os.path.realpath(__file__))
 
 class ModelRunner:
 
-    def __init__(self, config) -> None:
-        self.config = config
+    def __init__(self, config: DictConfig) -> None:
+        self.config: DictConfig = config
         initialize_chemdata(self.config.chem_params)
         FFindexDB = namedtuple("FFindexDB", "index, data")
         self.ffdb = FFindexDB(read_index(config.database_params.DB_PDB100+'_pdb.ffindex'),
                               read_data(config.database_params.DB_PDB100+'_pdb.ffdata'))
-        self.device = "cuda:0" if torch.cuda.is_available() and not config.force_cpu else "cpu"
+        self.device = "cuda:0" if torch.cuda.is_available() and not config.force_cpu and not config.msa_only else "cpu" 
         self.xyz_converter = XYZConverter()
         self.deterministic = config.get("deterministic", False)
         self.molecule_db = load_pdb_ideal_sdf_strings()
@@ -54,6 +55,11 @@ class ModelRunner:
                     self
                 ) 
                 protein_inputs[chain] = protein_input
+
+            if self.config.msa_only:
+                logging.info("MSA only mode is set, now quit.")
+                exit(0)
+
         
         na_inputs = {}
         if self.config.na_inputs is not None:

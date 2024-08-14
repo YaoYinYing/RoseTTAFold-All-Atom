@@ -50,6 +50,11 @@ class Pipeline:
                 raise ValueError(f"{k} does not exist: {v}")
 
         os.environ["BLASTMAT"] = os.path.join(self.blast_path, "data")
+        if self.ncpu > os.cpu_count():
+            logging.warning(
+                f"ncpu ({self.ncpu}) is greater than the number of available CPUs ({os.cpu_count()}). Falling back to use all."
+            )
+            self.ncpu = os.cpu_count()
 
     @staticmethod
     def check_a3m_seq_number(a3m_path: str, cutoff) -> bool:

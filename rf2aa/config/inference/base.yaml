@@ -8,6 +8,22 @@ database_params:
   num_cpus: 32
   mem: 256
 
+binaries:
+  hhblits: /mnt/data/envs/conda_env/envs/alphafold_2.3/bin/hhblits
+  hhfilter:
+  hhsearch:
+  signalp:
+  makemat:
+  psipred:
+  psipass2:
+
+data_dirs:
+  blast:
+  psipred:
+  csblast:
+
+msa_only: False
+
 force_cpu: False # force to use cpu if CUDA out of memory
 protein_inputs: null
 na_inputs: null
