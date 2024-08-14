@@ -2,10 +2,11 @@ import torch
 from hashlib import md5
 
 from rf2aa.data.data_loader_utils import merge_a3m_hetero, merge_a3m_homo, merge_hetero_templates, get_term_feats, join_msas_by_taxid, expand_multi_msa
-from rf2aa.data.data_loader import RawInputData
+
 from rf2aa.util import center_and_realign_missing, same_chain_from_bond_feats, random_rot_trans, idx_from_Ls
 
 
+from rf2aa.data.data_loader import RawInputData
 def merge_protein_inputs(protein_inputs, deterministic: bool = False):
     if len(protein_inputs) == 0:
         return None,[]

@@ -1,13 +1,12 @@
 import os
 import shutil
 
-from omegaconf import DictConfig
 from absl import logging
 
+from rf2aa.data.dataclasses import ModelRunner
 from rf2aa.data.msa.pipeline import Pipeline
 
-
-def make_msa(fasta_file: str, chain: str, model_runner: DictConfig):
+def make_msa(fasta_file: str, chain: str, model_runner: ModelRunner):
 
     CONDA_PREFIX = os.environ.get("CONDA_PREFIX", None)
     if CONDA_PREFIX is None:

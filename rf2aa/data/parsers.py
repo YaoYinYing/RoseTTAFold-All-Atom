@@ -4,7 +4,8 @@ import scipy.spatial
 import string
 import os,re
 from os.path import exists
-import random
+
+from rf2aa.data.dataclasses import FFindexDB
 import rf2aa.util as util
 import gzip
 import rf2aa
@@ -554,7 +555,6 @@ def parse_templates(item, params):
     # init FFindexDB of templates
     ### and extract template IDs
     ### present in the DB
-    FFindexDB = namedtuple("FFindexDB", "index, data")
     ffdb = FFindexDB(read_index(params['FFDB']+'_pdb.ffindex'),
                      read_data(params['FFDB']+'_pdb.ffdata'))
     #ffids = set([i.name for i in ffdb.index])
@@ -623,7 +623,7 @@ def parse_templates(item, params):
         
     return xyz,mask,qmap,f0d,f1d,ids
 
-def parse_templates_raw(ffdb, hhr_fn, atab_fn, max_templ=20):
+def parse_templates_raw(ffdb: FFindexDB, hhr_fn, atab_fn, max_templ=20):
     # process tabulated hhsearch output to get
     # matched positions and positional scores
     hits = []

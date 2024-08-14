@@ -1,4 +1,5 @@
 import os
+from typing import Any
 import hydra
 import torch
 import torch.nn as nn
@@ -7,10 +8,11 @@ from omegaconf import DictConfig
 
 from absl import logging
 
+
 from rf2aa.data.merge_inputs import merge_all
 from rf2aa.data.covale import load_covalent_molecules
 from rf2aa.data.nucleic_acid import load_nucleic_acid
-from rf2aa.data.protein import generate_msa_and_load_protein
+from rf2aa.data.protein import FFindexDB, generate_msa_and_load_protein
 from rf2aa.data.small_molecule import load_small_molecule
 from rf2aa.ffindex import *
 from rf2aa.chemical import initialize_chemdata, load_pdb_ideal_sdf_strings
@@ -29,7 +31,7 @@ class ModelRunner:
     def __init__(self, config: DictConfig) -> None:
         self.config: DictConfig = config
         initialize_chemdata(self.config.chem_params)
-        FFindexDB = namedtuple("FFindexDB", "index, data")
+        
         self.ffdb = FFindexDB(read_index(config.database_params.DB_PDB100+'_pdb.ffindex'),
                               read_data(config.database_params.DB_PDB100+'_pdb.ffdata'))
         self.device = "cuda:0" if torch.cuda.is_available() and not config.force_cpu and not config.msa_only else "cpu" 
@@ -42,18 +44,24 @@ class ModelRunner:
         chains = []
         protein_inputs = {}
         if self.config.protein_inputs is not None:
+            calculated_proteins: dict[str, Any]={}
             for chain in self.config.protein_inputs:
                 if chain in chains:
                     raise ValueError(f"Duplicate chain found with name: {chain}. Please specify unique chain names")
-                elif len(chain) > 1:
+                if len(chain) > 1:
                     raise ValueError(f"Chain name must be a single character, found chain with name: {chain}")
+                
+                chains.append(chain)
+                fasta_file: str=self.config.protein_inputs[chain]["fasta_file"]
+                if not fasta_file in calculated_proteins:
+                    protein_input = generate_msa_and_load_protein(
+                        fasta_file,
+                        chain,
+                        self
+                    ) 
                 else:
-                    chains.append(chain)
-                protein_input = generate_msa_and_load_protein(
-                    self.config.protein_inputs[chain]["fasta_file"],
-                    chain,
-                    self
-                ) 
+                    protein_input=calculated_proteins[fasta_file]
+
                 protein_inputs[chain] = protein_input
 
             if self.config.msa_only:

@@ -5,9 +5,6 @@ from icecream import ic
 from torch.utils import data
 import os, csv, random, pickle, gzip, itertools, time, ast, copy, sys
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(script_dir)
-sys.path.append(script_dir+'/../')
 
 import numpy as np
 import scipy

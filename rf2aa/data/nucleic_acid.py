@@ -1,12 +1,16 @@
+from typing import Literal
 import numpy as np
 import torch
 
+from rf2aa.data.dataclasses import ModelRunner
 from rf2aa.data.parsers import parse_mixed_fasta, parse_multichain_fasta
 from rf2aa.data.data_loader_utils import merge_a3m_hetero, merge_a3m_homo, blank_template
 from rf2aa.data.data_loader import RawInputData
+
 from rf2aa.util import get_protein_bond_feats
 
-def load_nucleic_acid(fasta_fn, input_type, model_runner):
+
+def load_nucleic_acid(fasta_fn, input_type: Literal["dna", "rna"], model_runner: ModelRunner):
     if input_type not in ["dna", "rna"]:
         raise ValueError("Only DNA and RNA inputs allowed for nucleic acids")
     if input_type == "dna":
