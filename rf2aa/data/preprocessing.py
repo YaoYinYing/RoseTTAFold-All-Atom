@@ -2,6 +2,7 @@ import os
 import shutil
 
 from omegaconf import DictConfig
+from absl import logging
 
 from rf2aa.data.msa.pipeline import Pipeline
 
@@ -10,7 +11,8 @@ def make_msa(fasta_file: str, chain: str, model_runner: DictConfig):
 
     CONDA_PREFIX = os.environ.get("CONDA_PREFIX", None)
     if CONDA_PREFIX is None:
-        raise NotImplementedError("Make sure conda is activated")
+        logging.warning('You are runing RoseTTAFold-All-Atom WITHTOUT CONDA environment.')
+        logging.warning('Make sure you have configured the correct paths of all binaries and data directories.')
 
     out_dir_base = os.path.abspath(model_runner.config.output_path)
     hash: str = model_runner.config.job_name
