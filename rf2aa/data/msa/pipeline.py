@@ -168,7 +168,7 @@ class Pipeline:
         return output_a3m_path, False
 
     def run_msa_search(self, fasta_path: str) -> str:
-        dbs = (self.uniref30_database, self.uniref30_database)
+        dbs = (self.uniref30_database, self.bfd_databse)
         e_value_groups = (
             (
                 1e-10,
