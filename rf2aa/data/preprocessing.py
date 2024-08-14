@@ -1,35 +1,72 @@
 import os
-from hydra import initialize, compose
-from pathlib import Path
-import subprocess
+import shutil
 
-#from rf2aa.run_inference import ModelRunner
+from absl import logging
 
+from rf2aa.data.dataclasses import ModelRunner
+from rf2aa.data.msa.pipeline import Pipeline
 
-def make_msa(
-    fasta_file,
-    chain,
-    model_runner
-): 
-    out_dir_base = Path(model_runner.config.output_path)
-    hash = model_runner.config.job_name
-    out_dir = out_dir_base / hash / chain
-    out_dir.mkdir(parents=True, exist_ok=True)
+def make_msa(fasta_file: str, chain: str, model_runner: ModelRunner):
 
-    command = model_runner.config.database_params.command
-    search_base = model_runner.config.database_params.sequencedb
+    CONDA_PREFIX = os.environ.get("CONDA_PREFIX", None)
+    if CONDA_PREFIX is None:
+        logging.warning('You are runing RoseTTAFold-All-Atom WITHTOUT CONDA environment.')
+        logging.warning('Make sure you have configured the correct paths of all binaries and data directories.')
+
+    out_dir_base = os.path.abspath(model_runner.config.output_path)
+    hash: str = model_runner.config.job_name
+    out_dir = os.path.join(out_dir_base, hash, chain)
+    os.makedirs(out_dir, exist_ok=True)
+
+    # sequence databases
+    DB_UR30 = model_runner.config.database_params.DB_UR30
+    DB_BFD = model_runner.config.database_params.DB_BFD
     num_cpus = model_runner.config.database_params.num_cpus
     ram_gb = model_runner.config.database_params.mem
-    template_database = model_runner.config.database_params.hhdb
+    template_database = model_runner.config.database_params.DB_PDB100
 
-    out_a3m = out_dir / "t000_.msa0.a3m"
-    out_atab = out_dir / "t000_.atab"
-    out_hhr = out_dir / "t000_.hhr"
-    if out_a3m.exists() and out_atab.exists() and out_hhr.exists():
-        return out_a3m, out_hhr, out_atab
+    # binaries 
+    hhblits_binary= model_runner.config.binaries.hhblits
+    hhfilter_binary= model_runner.config.binaries.hhfilter
+    hhsearch_binary= model_runner.config.binaries.hhsearch
+    signalp_binary= model_runner.config.binaries.signalp
+    makemat_binary= model_runner.config.binaries.makemat
+    psipred_binary= model_runner.config.binaries.psipred
+    psipass2_binary= model_runner.config.binaries.psipass2
 
-    search_command = f"./{command} {fasta_file} {out_dir} {num_cpus} {ram_gb} {search_base} {template_database}"
-    print(search_command)
-    _ = subprocess.run(search_command, shell=True)
+    # data dirs
+    blast_dir= model_runner.config.data_dirs.blast
+    psipred_dir= model_runner.config.data_dirs.psipred
+    csblast_dir= model_runner.config.data_dirs.csblast
+
+    msa_pipeline = Pipeline(
+        hhblits_binary=hhblits_binary if hhblits_binary else shutil.which("hhblits"),
+        hhfilter_binary=hhfilter_binary if hhfilter_binary else shutil.which("hhfilter"),
+        hhsearch_binary=hhsearch_binary if hhsearch_binary else shutil.which("hhsearch"),
+        signalp_binary=signalp_binary if signalp_binary else shutil.which("signalp"),
+        makemat_binary=makemat_binary if makemat_binary else shutil.which("makemat"),
+        blast_path=blast_dir if blast_dir else os.path.join(CONDA_PREFIX, "share/blast-2.2.26/blast-2.2.26"),
+        psipred_binary=psipred_binary if psipred_binary else shutil.which("psipred"),
+        psipred_data_dir=psipred_dir if psipred_dir else os.path.join(CONDA_PREFIX, "share", "psipred_4.01/data"),
+        psipass2_binary=psipass2_binary if psipass2_binary else shutil.which("psipass2"),
+        csblast_dir=csblast_dir if csblast_dir else os.path.join(CONDA_PREFIX, "share/csblast-2.2.3"),
+        uniref30_database=DB_UR30,
+        bfd_databse=DB_BFD,
+        template_database=template_database,
+        ncpu=num_cpus,
+        max_mem=ram_gb,
+        out_prefix="rf2aa_",
+        save_dir=out_dir,
+    )
+
+    trim_fasta = msa_pipeline.run_signalp(fasta_path=os.path.abspath(fasta_file))
+
+    out_a3m = msa_pipeline.run_msa_search(fasta_path=trim_fasta)
+    ss2_file = msa_pipeline.run_psipred(msa_path=out_a3m)
+    out_hhr, out_atab = msa_pipeline.run_hhsearch(msa_path=out_a3m, ss2_path=ss2_file)
+
+    for f in [out_a3m, out_hhr, out_atab]:
+        if not os.path.isfile(f):
+            raise FileNotFoundError(f"{f} not found")
+
     return out_a3m, out_hhr, out_atab
-

@@ -1,15 +1,16 @@
+
 import torch
 
-from rf2aa.data.data_loader import RawInputData
+from rf2aa.data.data_loader import  RawInputData
 from rf2aa.data.data_loader_utils import blank_template, TemplFeaturize
+from rf2aa.data.dataclasses import FFindexDB, ModelRunner
 from rf2aa.data.parsers import parse_a3m, parse_templates_raw
 from rf2aa.data.preprocessing import make_msa
 from rf2aa.util import get_protein_bond_feats
 
-
 def get_templates(
     qlen,
-    ffdb,
+    ffdb:FFindexDB,
     hhr_fn,
     atab_fn,
     seqID_cut,
@@ -52,7 +53,7 @@ def get_templates(
     )
 
 
-def load_protein(msa_file, hhr_fn, atab_fn, model_runner):
+def load_protein(msa_file, hhr_fn, atab_fn, model_runner: ModelRunner):
     msa, ins, taxIDs = parse_a3m(msa_file)
     # NOTE: this next line is a bug, but is the way that
     # the code is written in the original implementation!
@@ -88,6 +89,7 @@ def load_protein(msa_file, hhr_fn, atab_fn, model_runner):
         taxids=taxIDs,
     )
 
-def generate_msa_and_load_protein(fasta_file, chain, model_runner):
+def generate_msa_and_load_protein(fasta_file, chain, model_runner: ModelRunner):
     msa_file, hhr_file, atab_file = make_msa(fasta_file, chain, model_runner)
+   
     return load_protein(str(msa_file), str(hhr_file), str(atab_file), model_runner)

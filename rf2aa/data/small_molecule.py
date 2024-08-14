@@ -2,12 +2,13 @@ import torch
 
 from rf2aa.data.data_loader import RawInputData
 from rf2aa.data.data_loader_utils import blank_template
+from rf2aa.data.dataclasses import ModelRunner
 from rf2aa.data.parsers import parse_mol
 from rf2aa.kinematics import get_chirals
 from rf2aa.util import get_bond_feats, get_nxgraph, get_atom_frames
 
 
-def load_small_molecule(input_file, input_type, model_runner):
+def load_small_molecule(input_file, input_type, model_runner: ModelRunner):
     if input_type == "smiles":
         is_string = True
     else:
@@ -18,7 +19,7 @@ def load_small_molecule(input_file, input_type, model_runner):
     )
     return compute_features_from_obmol(obmol, msa, xyz, model_runner) 
 
-def compute_features_from_obmol(obmol, msa, xyz, model_runner):
+def compute_features_from_obmol(obmol, msa, xyz, model_runner: ModelRunner):
     L = msa.shape[0]
     ins = torch.zeros_like(msa)
     bond_feats = get_bond_feats(obmol)
